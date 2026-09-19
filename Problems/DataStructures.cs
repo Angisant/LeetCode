@@ -3,6 +3,7 @@ LeetCode Data Structures and Algorithms https://leetcode.com/quest/data-structur
 */
 
 using System.Dynamic;
+using System.Globalization;
 
 namespace Problems.DataStructures;
 
@@ -358,5 +359,403 @@ public class Solution
             }
         }
         return largestArea;
+    }
+
+    public int[] PlusOne(int[] digits)
+    {
+        if (digits.Length == 0) return [];
+
+        int[] res = new int[digits.Length];
+        bool addOne = true;
+        for (int i = digits.Length - 1; i >= 0; i--)
+        {
+            if (addOne)
+            {
+                int d = digits[i];
+                if (d != 9)
+                {
+                    res[i] = d + 1;
+                    addOne = false;
+                }
+                else
+                {
+                    res[i] = 0;
+                }
+            }
+            else
+            {
+                res[i] = digits[i];
+            }
+        }
+
+        if (addOne)
+        {
+            res = (new int[1] { 1 }).Concat(res).ToArray();
+        }
+        return res;
+    }
+
+    public bool ValidMountainArray(int[] arr)
+    {
+        bool isIncreasing = (arr.Length >= 3 && arr[0] < arr[1]);
+        if (!isIncreasing) return false;
+
+        int previousNum = -1;
+        foreach (int n in arr)
+        {
+            if (previousNum >= 0)
+            {
+                if (n == previousNum || (!isIncreasing && n > previousNum))  // Didnt change or Was decreasing but increased again
+                {
+                    return false;
+                }
+
+                if (isIncreasing && n < previousNum)    // Decreasing starts
+                {
+                    isIncreasing = false;
+                }
+            }
+            previousNum = n;
+        }
+        if (isIncreasing)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    public string RemoveDuplicateLetters(string s)
+    {
+        SortedSet<char> letters = new SortedSet<char>(s);
+        List<char> lst = new List<char>(s);
+
+        if (letters.Count == s.Length) return s;
+
+        Dictionary<char, int> lastIdxs = new Dictionary<char, int>();
+        foreach (char c in letters)
+        {
+            lastIdxs.Add(c, lst.FindLastIndex(c2 => c2 == c));
+        }
+
+        Stack<char> stack = new Stack<char>();
+        HashSet<char> present = new HashSet<char>();
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (!present.Contains(c))
+            {
+                // Curr char is lexicographically smaller than prev and prev char still appears later in the string
+                // Can pop multiple values from stack
+                while (stack.Count > 0 && c < stack.Peek() && i < lastIdxs[stack.Peek()])
+                {
+                    present.Remove(stack.Pop());
+                }
+                stack.Push(c);
+                present.Add(c);
+            }
+        }
+        return new string(stack.Reverse().ToArray());
+    }
+
+    // Circular sandwiches = 0, Square sandwiches = 1
+    public int CountStudents(int[] students, int[] sandwiches)
+    {
+        Queue<int> studentQueue = new Queue<int>(students);
+        int sIdx = 0, unable = 0;
+        while (unable < studentQueue.Count)
+        {
+            if (studentQueue.Peek() == sandwiches[sIdx])
+            {
+                studentQueue.Dequeue();
+                unable = 0;
+                sIdx++;
+            }
+            else
+            {
+                studentQueue.Enqueue(studentQueue.Dequeue());
+                unable++;
+            }
+        }
+        return unable;
+    }
+
+    public int TimeRequiredToBuy(int[] tickets, int k)
+    {
+        int sum = 0, kTickets = tickets[k];
+        for (int i = 0; i < tickets.Length; i++)
+        {
+            int iTickets = tickets[i];
+            if (i <= k)
+            {
+                sum += (iTickets < kTickets) ? iTickets : kTickets;
+            }
+            else
+            {
+                sum += (iTickets < (kTickets - 1)) ? iTickets : (kTickets - 1);
+            }
+        }
+        return sum;
+    }
+
+    public int TimeRequiredToBuy_Queue(int[] tickets, int k)
+    {
+        Queue<int> peopleQueue = new Queue<int>(Enumerable.Range(0, tickets.Length));
+        int time = 0;
+        while (true)
+        {
+            int frontIdx = peopleQueue.Peek();
+            tickets[frontIdx]--;
+            time++;
+            if (tickets[frontIdx] == 0)
+            {
+                if (frontIdx == k)
+                {
+                    return time;
+                }
+                peopleQueue.Dequeue();
+            }
+            else
+            {
+                peopleQueue.Enqueue(peopleQueue.Dequeue());
+            }
+        }
+    }
+
+    public int LastStoneWeight(int[] stones)
+    {
+        List<int> orderedStones = stones.OrderBy(s => s).ToList();
+        while (orderedStones.Count > 1)
+        {
+            int lastStone = orderedStones[orderedStones.Count - 1];
+            int secondLastStone = orderedStones[orderedStones.Count - 2];
+            if (lastStone == secondLastStone)
+            {
+                orderedStones.RemoveRange(orderedStones.Count - 2, 2);
+            }
+            else
+            {
+                orderedStones.RemoveAt(orderedStones.Count - 2);
+                orderedStones[orderedStones.Count - 1] = Math.Max(lastStone - secondLastStone, secondLastStone - lastStone);
+            }
+            orderedStones = orderedStones.OrderBy(s => s).ToList();
+        }
+        return orderedStones.Count > 0 ? orderedStones[0] : 0;
+    }
+
+    // In c# heap = PriorityQueuque
+    public int LastStoneWeight_Heap(int[] stones)
+    {
+        // Create heap with decreasing order comparer
+        PriorityQueue<int, int> heap = new PriorityQueue<int, int>(Comparer<int>.Create((a, b) => b - a));
+        foreach (int os in stones)
+        {
+            heap.Enqueue(os, os);   // Priority = weight => Heap will be ordered by weight
+        }
+
+        while (heap.Count > 1)
+        {
+            int lastStone = heap.Dequeue();
+            int secondLastStone = heap.Dequeue();
+            if (lastStone != secondLastStone)
+            {
+                int diff = Math.Max(lastStone - secondLastStone, secondLastStone - lastStone);
+                heap.Enqueue(diff, diff);
+            }
+        }
+        return heap.Count > 0 ? heap.Dequeue() : 0;
+    }
+
+    // nums1 and nums2 both are sorted in non-decreasing order and both have the same length
+    public IList<IList<int>> KSmallestPairs2(int[] nums1, int[] nums2, int k)
+    {
+        IList<IList<int>> res = new List<IList<int>>() { };
+        int i = 0, j = 0;
+        while (res.Count < k)
+        {
+            res.Add(new List<int> { nums1[i], nums2[j] });
+            if (i < nums1.Length - 1 && j < nums2.Length - 1)
+            {
+                if (nums1[i] + nums2[j + 1] <= nums1[i + 1] + nums2[j])
+                {
+                    i = 0;
+                    j++;
+                }
+                else
+                {
+                    i++;
+                    j = 0;
+                }
+            }
+            else
+            {
+                if (i <= nums1.Length - 1)
+                {
+                    j++;
+                }
+                else
+                {
+                    i++;
+                }
+            }
+        }
+        return res;
+    }
+
+    public IList<IList<int>> KSmallestPairs(int[] nums1, int[] nums2, int k)
+    {
+        IList<IList<int>> res = new List<IList<int>>();
+        PriorityQueue<int[], int> heap = new PriorityQueue<int[], int>();
+
+        // Put the first pair from each row into the heap
+        for (int i = 0; i < Math.Min(nums1.Length, k); i++)  // Insert up to k elements from nums1
+        {
+            heap.Enqueue([i, 0], nums1[i] + nums2[0]);
+        }
+
+        while (heap.Count > 0 && res.Count < k)
+        {
+            int[] idxs = heap.Dequeue();    // Get smallest saved sum
+            int i = idxs[0], j = idxs[1];
+            res.Add(new List<int> { nums1[i], nums2[j] });  // Add smallest saved sum
+
+            // Move right
+            if (j < nums2.Length - 1)
+            {
+                heap.Enqueue([i, j + 1], nums1[i] + nums2[j + 1]);
+            }
+        }
+        return res;
+    }
+
+    public bool IsPossible(int[] target)
+    {
+        bool isAllOnes = false;
+        int oldSum = 0, newSum = 0, oldSumIdx = 0;
+        while (!isAllOnes)
+        {
+            isAllOnes = true;
+
+            if (newSum > 0)
+            {
+                // newSum = sum - replacedNum + newNum => newSum = 2oldSum - replacedNum => replacedNum = 2oldSum - newSum
+                target[oldSumIdx] = 2 * oldSum - newSum;    // Compute old X
+                oldSum = 0;
+                newSum = 0;
+            }
+
+            for (int i = 0; i < target.Length; i++)
+            {
+                if (target[i] > 1)
+                {
+                    isAllOnes = false;
+                    if (target[i] > oldSum)
+                    {
+                        oldSum = target[i];     // oldSum (oldX) will always be the biggest value on the array 
+                        oldSumIdx = i;
+                    }
+                }
+                else if (target[i] != 1 && target[i] < target.Length)   // Cannot turn into 1
+                {
+                    return false;
+                }
+                newSum += target[i];        // Compute new X
+            }
+        }
+        return true;
+    }
+
+    public bool IsPossible_Heap(int[] target)
+    {
+        // Create heap with bigger values first
+        PriorityQueue<int, int> heap = new PriorityQueue<int, int>(Comparer<int>.Create((a, b) => b - a));
+        foreach (int t in target) heap.Enqueue(t, t);
+
+        bool isAllOnes = false;
+        int newSum = target.Sum();
+        while (!isAllOnes)
+        {
+            isAllOnes = true;
+            int oldSum = heap.Dequeue();    // oldSum (oldX) will always be the biggest value on the array 
+
+            if (oldSum < 1 || (oldSum > 1 && oldSum < target.Length))   // Cannot turn into 1
+            {
+                return false;
+            }
+            else if (oldSum > 1)
+            {
+                isAllOnes = false;
+
+                // newSum = sum - replacedNum + newNum => newSum = 2oldSum - replacedNum => replacedNum = 2oldSum - newSum   
+                int replacedNum = 2 * oldSum - newSum;      // Compute old X
+                heap.Enqueue(replacedNum, replacedNum);
+                newSum = oldSum;
+            }
+        }
+        return true;
+    }
+}
+
+public class MyQueue
+{
+    private Stack<int> _uprightStack;
+    private Stack<int> _upsideDownStack;
+
+    public MyQueue()
+    {
+        _uprightStack = new Stack<int>();
+        _upsideDownStack = new Stack<int>();
+    }
+
+    public void Push(int x)
+    {
+        if (_uprightStack.Count > 0 && _upsideDownStack.Count == 0)
+        {
+            while (_uprightStack.Count > 0)
+            {
+                _upsideDownStack.Push(_uprightStack.Pop());
+            }
+        }
+        _upsideDownStack.Push(x);
+    }
+
+    public int Pop()
+    {
+        if (_uprightStack.Count > 0)
+        {
+            return _uprightStack.Pop();
+        }
+
+        if (_upsideDownStack.Count > 0 && _uprightStack.Count == 0)
+        {
+            while (_upsideDownStack.Count > 0)
+            {
+                _uprightStack.Push(_upsideDownStack.Pop());
+            }
+            return _uprightStack.Pop();
+        }
+        return 0;
+    }
+
+    public int Peek()
+    {
+        if (_uprightStack.Count > 0)
+        {
+            return _uprightStack.Peek();
+        }
+
+        if (_upsideDownStack.Count > 0 && _uprightStack.Count == 0)
+        {
+            while (_upsideDownStack.Count > 0)
+            {
+                _uprightStack.Push(_upsideDownStack.Pop());
+            }
+            return _uprightStack.Peek();
+        }
+        return 0;
+    }
+
+    public bool Empty()
+    {
+        return _upsideDownStack.Count == 0 && _uprightStack.Count == 0;
     }
 }
