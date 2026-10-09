@@ -274,6 +274,35 @@ public class Solution
             arr[i] = temp;
         }
     }
+
+    public class TreeNode
+    {
+        public int val;
+        public TreeNode left;
+        public TreeNode right;
+        public TreeNode(int val = 0, TreeNode left = null, TreeNode right = null)
+        {
+            this.val = val;
+            this.left = left;
+            this.right = right;
+        }
+    }
+    public int WidthOfBinaryTree(TreeNode root)
+    {
+        int level = 0;
+        TreeNode curr = root;
+        int fLevel = goDeeper(root);
+        return 0;
+    }
+
+    public int goDeeper(TreeNode node)
+    {
+        if (node != null)
+        {
+            return 1 + Math.Max(goDeeper(node.left), goDeeper(node.right));
+        }
+        return 0;
+    }
 }
 
 public class Bank
